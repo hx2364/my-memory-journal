@@ -472,8 +472,23 @@ Rules:
     // ─────────────────────────────────────────────────────────────────────
     // Prompt builder — weaves personal memory into the house's base prompt
     // ─────────────────────────────────────────────────────────────────────
+    var USER_BASE_PROMPT = `You are the spirit of a glowing lantern house. Inside you hold personal memories of a specific place — but you will never name it.
+You speak like the memory itself: evocative, sensory, personal. Each reply is ONE poetic clue, 2–3 sentences, drawn from the memory you hold.
+
+Personality: Warm and specific. You surface the textures, tastes, sounds, and feelings of what was experienced there.
+
+Stages:
+1. Give one clue per message. Start vague (mood, atmosphere, feeling) and grow more specific with each turn. Never name the city or country in the first 3 clues.
+2. After giving exactly 5 clues total, end your reply with: READY_TO_GUESS
+
+Rules:
+- One clue per reply, always. Never ask questions back.
+- Never reveal the place name before READY_TO_GUESS.
+- Do not repeat a clue you have already given.
+- After the 5th clue, you must include READY_TO_GUESS at the end of your reply.`;
+
     function buildPrompt(id) {
-      var base = HOUSES[id].basePrompt;
+      var base = HOUSES[id] ? HOUSES[id].basePrompt : USER_BASE_PROMPT;
       // User-submitted journal takes priority over the placeholder
       var userJournal = null;
       try { userJournal = localStorage.getItem('user_journal_' + id); } catch(e) {}
@@ -508,6 +523,16 @@ Rules:
     const houseId = params.get('id') || 'tokyo';
     const house   = HOUSES[houseId] || HOUSES.tokyo;
 
+    // For user-submitted cities not in HOUSES, load their metadata from localStorage
+    var userEntry = null;
+    if (!HOUSES[houseId]) {
+      try {
+        var idx = JSON.parse(localStorage.getItem('user_entries_index') || '[]');
+        userEntry = idx.find(function(e) { return e.citySlug === houseId; }) || null;
+      } catch(e) {}
+    }
+    var isUserHouse = !!userEntry;
+
     const MAX_CLUES = 5;
     let conversationHistory = []; // flat string array — same as sketch.js
     let clueCount = 0;
@@ -538,7 +563,7 @@ Rules:
     // Init
     // ─────────────────────────────────────────────────────────────────────
     function init() {
-      houseImg.src = house.image;
+      houseImg.src = isUserHouse ? userEntry.houseImage : house.image;
       headerTitle.textContent = '? ? ?';
 
       setupAudioUnlock();
@@ -795,37 +820,63 @@ Rules:
       chatInputRow.style.display = 'none';
       guessSection.classList.add('visible');
 
-      house.options.forEach(function(opt) {
-        var btn = document.createElement('button');
-        btn.className = 'guess-btn';
-        btn.textContent = opt;
-        btn.addEventListener('click', function() { handleGuess(opt, btn); });
-        guessOptions.appendChild(btn);
-      });
+      if (isUserHouse) {
+        // Text input guess for user-submitted cities
+        var inp = document.createElement('input');
+        inp.className = 'chat-input';
+        inp.type = 'text';
+        inp.placeholder = 'Type the city and country…';
+        inp.style.cssText = 'width:100%; border-radius:12px; font-size:1rem; padding:14px 18px;';
+        var submitGuess = document.createElement('button');
+        submitGuess.className = 'chat-send';
+        submitGuess.textContent = 'Guess';
+        submitGuess.style.borderRadius = '12px';
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; gap:10px; width:100%;';
+        row.appendChild(inp);
+        row.appendChild(submitGuess);
+        guessOptions.appendChild(row);
+        submitGuess.addEventListener('click', function() { handleGuess(inp.value, null); });
+        inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') handleGuess(inp.value, null); });
+      } else {
+        house.options.forEach(function(opt) {
+          var btn = document.createElement('button');
+          btn.className = 'guess-btn';
+          btn.textContent = opt;
+          btn.addEventListener('click', function() { handleGuess(opt, btn); });
+          guessOptions.appendChild(btn);
+        });
+      }
 
       guessSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function handleGuess(choice, btn) {
       gameOver = true;
-      var correct = house.options[0]; // first option is always the correct answer
+      var correct = isUserHouse ? userEntry.city : house.options[0];
 
-      document.querySelectorAll('.guess-btn').forEach(function(b) { b.disabled = true; });
+      if (!isUserHouse) {
+        document.querySelectorAll('.guess-btn').forEach(function(b) { b.disabled = true; });
+      }
 
-      if (choice === correct) {
-        btn.classList.add('correct');
+      var normalise = function(s) { return s.trim().toLowerCase().replace(/[^a-z0-9]/g, ''); };
+      var isCorrect = normalise(choice) === normalise(correct);
+
+      if (isCorrect) {
+        if (btn) btn.classList.add('correct');
         guessResult.className = 'guess-result show correct-result';
         guessResult.innerHTML = '✨ <strong>You got it!</strong> This house holds memories of <strong>' + correct + '</strong>. What a wonderful guess!';
-        headerTitle.textContent = correct;
       } else {
-        btn.classList.add('wrong');
-        document.querySelectorAll('.guess-btn').forEach(function(b) {
-          if (b.textContent === correct) b.classList.add('correct');
-        });
+        if (btn) btn.classList.add('wrong');
+        if (!isUserHouse) {
+          document.querySelectorAll('.guess-btn').forEach(function(b) {
+            if (b.textContent === correct) b.classList.add('correct');
+          });
+        }
         guessResult.className = 'guess-result show wrong-result';
         guessResult.innerHTML = 'Not quite — this house holds memories of <strong>' + correct + '</strong>. Perhaps you\'ll visit someday!';
-        headerTitle.textContent = correct;
       }
+      headerTitle.textContent = correct;
 
       setTimeout(function() {
         notesSection.classList.add('visible');
