@@ -424,6 +424,19 @@
     }
     .play-btn:hover { background: #c8b89a; color: #111; }
     .play-btn-soon { color: #444; font-size: 0.82rem; font-style: italic; margin-top: 6px; }
+    .gallery-btn {
+      display: inline-block;
+      background: transparent;
+      border: 1.5px solid #555;
+      color: #888;
+      border-radius: 999px;
+      padding: 12px 34px;
+      font-family: 'Lora', serif;
+      font-size: 0.93rem;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .gallery-btn:hover { border-color: #c8b89a; color: #c8b89a; }
 
     @media (max-width: 520px) {
       .header { padding: 12px 16px; }
@@ -446,7 +459,7 @@
     <div id="inputStep">
 
       <!-- City + Country -->
-      <div style="margin-bottom: 28px">
+      <div style="margin-bottom: 20px">
         <p class="section-label">Where did you go?</p>
         <div class="location-row">
           <div>
@@ -458,6 +471,13 @@
               placeholder="Country (e.g. Japan)" autocomplete="off" />
           </div>
         </div>
+      </div>
+
+      <!-- Name -->
+      <div style="margin-bottom: 28px">
+        <p class="section-label">Your name (optional)</p>
+        <input class="city-input" id="nameInput" type="text"
+          placeholder="How should we credit this memory?" autocomplete="off" />
       </div>
 
       <!-- Mode toggle -->
@@ -564,7 +584,8 @@
       <h2 class="conf-title">Memory saved.</h2>
       <p class="conf-city" id="confCity"></p>
       <p class="conf-sub">Others who visit can now try to guess your place.</p>
-      <div id="playBtnWrap"></div>
+      <div id="playBtnWrap" style="display:flex;flex-direction:column;align-items:center;gap:10px"></div>
+      <a class="gallery-btn" href="gallery.html">View all memories →</a>
     </div>
 
   </main>
@@ -609,6 +630,7 @@
     // ── DOM ────────────────────────────────────────────────────
     var cityInput           = document.getElementById('cityInput');
     var countryInput        = document.getElementById('countryInput');
+    var nameInput           = document.getElementById('nameInput');
     var modeWriteBtn        = document.getElementById('modeWriteBtn');
     var modeGuidedBtn       = document.getElementById('modeGuidedBtn');
     var writePanel          = document.getElementById('writePanel');
@@ -844,11 +866,14 @@
       var collectedVia = mode === 'write' ? 'freeform' : 'guided';
       var citySlug     = city.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
+      var authorName = nameInput.value.trim() || 'Anonymous';
+
       var entry = {
         city:          cityDisplay,
         citySlug:      citySlug,
         journal:       journal,
         houseImage:    selectedImage,
+        name:          authorName,
         collected_via: collectedVia,
         timestamp:     new Date().toISOString()
       };
