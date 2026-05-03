@@ -533,6 +533,27 @@ Rules:
         'Pick cities with a similar vibe, region, or atmosphere — close enough to be tempting but not the same. ' +
         'Return ONLY a JSON array of exactly 3 strings in "City, Country" format. No other text. Example: ["Boston, United States","Montreal, Canada","Chicago, United States"]';
 
+      // Static fallback cities used if the AI call fails or returns unparseable output
+      var FALLBACK_CITIES = [
+        'Barcelona, Spain', 'Buenos Aires, Argentina', 'Mexico City, Mexico',
+        'Sydney, Australia', 'Lagos, Nigeria', 'Mumbai, India',
+        'Cape Town, South Africa', 'Istanbul, Turkey', 'Lima, Peru',
+        'Toronto, Canada', 'Lisbon, Portugal', 'Amsterdam, Netherlands'
+      ];
+
+      function buildOptions(wrong) {
+        var opts = wrong.slice(0, 3);
+        opts.splice(Math.floor(Math.random() * 4), 0, city);
+        userHouseOptions = opts;
+      }
+
+      function useFallback() {
+        var shuffled = FALLBACK_CITIES.filter(function(c) {
+          return c.toLowerCase() !== city.toLowerCase();
+        }).sort(function() { return Math.random() - 0.5; });
+        buildOptions(shuffled.slice(0, 3));
+      }
+
       return fetch(PROXY_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
@@ -543,17 +564,18 @@ Rules:
       })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (!data.output) return;
+        if (!data.output) { useFallback(); return; }
         try {
-          var wrong = JSON.parse(data.output.join('').trim());
-          if (!Array.isArray(wrong) || wrong.length < 3) return;
-          // Shuffle correct answer into a random position
-          var opts = wrong.slice(0, 3);
-          opts.splice(Math.floor(Math.random() * 4), 0, city);
-          userHouseOptions = opts;
-        } catch(e) {}
+          var raw = data.output.join('').trim();
+          // Extract JSON array even if surrounded by markdown or prose
+          var match = raw.match(/\[[\s\S]*?\]/);
+          if (!match) { useFallback(); return; }
+          var wrong = JSON.parse(match[0]);
+          if (!Array.isArray(wrong) || wrong.length < 3) { useFallback(); return; }
+          buildOptions(wrong);
+        } catch(e) { useFallback(); }
       })
-      .catch(function() {});
+      .catch(function() { useFallback(); });
     }
 
     // ─────────────────────────────────────────────────────────────────────
