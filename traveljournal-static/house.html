@@ -646,7 +646,8 @@ Rules:
           input: {
             prompt: fullPrompt,
             max_tokens: 80,
-            temperature: 0.8
+            temperature: 0.8,
+            stop_sequences: ["\nYou:", "You:"]
           }
         })
       })
@@ -660,7 +661,9 @@ Rules:
 
           // Check for stage-2 signal
           var hasSignal = reply.includes("READY_TO_GUESS");
-          var cleanReply = reply.replace(/READY_TO_GUESS/g, "").trim();
+          var cleanReply = reply
+            .split(/\nYou:/i)[0]
+            .replace(/READY_TO_GUESS/g, "").trim();
 
           // Save to history — same as sketch.js
           conversationHistory.push("Bot: " + cleanReply);
