@@ -657,7 +657,7 @@ Rules:
           model: "anthropic/claude-3.5-haiku",
           input: {
             prompt: fullPrompt,
-            max_tokens: 80,
+            max_tokens: 150,
             temperature: 0.8,
             stop_sequences: ["\nYou:", "You:"]
           }
@@ -671,11 +671,11 @@ Rules:
           // Join output array — same as sketch.js: response.output.join("")
           var reply = data.output.join("").trim();
 
-          // Check for stage-2 signal
-          var hasSignal = reply.includes("READY_TO_GUESS");
+          // Check for stage-2 signal — match full or truncated variants
+          var hasSignal = /READY_TO[\w_]*/i.test(reply);
           var cleanReply = reply
             .split(/\nYou:/i)[0]
-            .replace(/READY_TO_GUESS/g, "").trim();
+            .replace(/READY_TO[\w_]*/gi, "").trim();
 
           // Save to history — same as sketch.js
           conversationHistory.push("Bot: " + cleanReply);
