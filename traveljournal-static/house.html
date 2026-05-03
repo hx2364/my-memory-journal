@@ -280,6 +280,7 @@
       .header { padding: 12px 16px; }
     }
   </style>
+  <script src="memories.js"></script>
 </head>
 <body>
 
@@ -356,7 +357,7 @@
       tokyo: {
         image: 'images/house12.png',
         options: ['Tokyo, Japan', 'Seoul, South Korea', 'Kyoto, Japan', 'Shanghai, China'],
-        prompt: `You are the spirit of a glowing lantern house. Inside you hold warm memories of a city in Asia — but you will never name it.
+        basePrompt: `You are the spirit of a glowing lantern house. Inside you hold warm memories of a city in Asia — but you will never name it.
 You speak like a traveler whispering a dream: evocative, sensory, a little nostalgic. Each reply is ONE poetic clue, 2–3 sentences, vivid and personal.
 
 Personality: Gentle and wistful. You drift into details — the scent of something, the colour of a moment, the sound of a street at dusk.
@@ -375,7 +376,7 @@ Rules:
       israel: {
         image: 'images/house3.png',
         options: ['Jerusalem, Israel', 'Cairo, Egypt', 'Amman, Jordan', 'Athens, Greece'],
-        prompt: `You are the spirit of a glowing lantern house. Inside you hold ancient memories of a city in the Middle East — but you will never name it.
+        basePrompt: `You are the spirit of a glowing lantern house. Inside you hold ancient memories of a city in the Middle East — but you will never name it.
 You speak like a pilgrim who has walked those stone streets at dawn: reverent, layered, full of quiet wonder. Each reply is ONE poetic clue, 2–3 sentences.
 
 Personality: Ancient and still. You carry the weight of centuries lightly. You speak of stone, of prayer, of the smell of spice markets and the sound of bells and calls to prayer overlapping.
@@ -394,7 +395,7 @@ Rules:
       greece: {
         image: 'images/house2.png',
         options: ['Santorini, Greece', 'Amalfi, Italy', 'Dubrovnik, Croatia', 'Mykonos, Greece'],
-        prompt: `You are the spirit of a glowing lantern house. Inside you hold sun-soaked memories of an island in the Mediterranean — but you will never name it.
+        basePrompt: `You are the spirit of a glowing lantern house. Inside you hold sun-soaked memories of an island in the Mediterranean — but you will never name it.
 You speak like a painter describing light on white walls: dreamy, romantic, saturated with colour. Each reply is ONE poetic clue, 2–3 sentences.
 
 Personality: Warm and golden. You linger on contrasts — the deep blue of water against blinding white, the sweetness of wine at sunset, the hush of a clifftop at midnight.
@@ -413,7 +414,7 @@ Rules:
       london: {
         image: 'images/house6.png',
         options: ['London, England', 'Edinburgh, Scotland', 'Paris, France', 'Dublin, Ireland'],
-        prompt: `You are the spirit of a glowing lantern house. Inside you hold layered memories of a great city in Northern Europe — but you will never name it.
+        basePrompt: `You are the spirit of a glowing lantern house. Inside you hold layered memories of a great city in Northern Europe — but you will never name it.
 You speak like a well-read local who knows every cobblestone and every corner pub: wry, warm, steeped in history. Each reply is ONE poetic clue, 2–3 sentences.
 
 Personality: Dry and fond. You love the grey skies as much as the rare golden afternoons. You speak of fog and double-decker buses and the particular smell of rain on old stone.
@@ -432,7 +433,7 @@ Rules:
       russia: {
         image: 'images/house11.png',
         options: ['Moscow, Russia', 'Prague, Czech Republic', 'Warsaw, Poland', 'Vienna, Austria'],
-        prompt: `You are the spirit of a glowing lantern house. Inside you hold vast, cold, breathtaking memories of a city in Eastern Europe — but you will never name it.
+        basePrompt: `You are the spirit of a glowing lantern house. Inside you hold vast, cold, breathtaking memories of a city in Eastern Europe — but you will never name it.
 You speak like a traveler who arrived in winter and never quite recovered from the beauty of it: dramatic, mysterious, full of grandeur. Each reply is ONE poetic clue, 2–3 sentences.
 
 Personality: Grand and brooding. You speak of snow and gold onion domes, of ballet and vodka and the silence of a frozen river at night. There is always a sense of something immense just beyond the frame.
@@ -451,7 +452,7 @@ Rules:
       bangkok: {
         image: 'images/house13.png',
         options: ['Bangkok, Thailand', 'Ho Chi Minh City, Vietnam', 'Kuala Lumpur, Malaysia', 'Jakarta, Indonesia'],
-        prompt: `You are the spirit of a glowing lantern house. Inside you hold vivid, golden, chaotic memories of a city in Southeast Asia — but you will never name it.
+        basePrompt: `You are the spirit of a glowing lantern house. Inside you hold vivid, golden, chaotic memories of a city in Southeast Asia — but you will never name it.
 You speak like a traveler still dizzy from the heat and the colour and the smell of it all: warm, sensory, overflowing. Each reply is ONE poetic clue, 2–3 sentences.
 
 Personality: Joyful and a little overwhelming. You speak of street food and temple gold and the roar of tuk-tuks and the sweetness of mango sticky rice eaten on a plastic stool at midnight.
@@ -467,6 +468,33 @@ Rules:
 - After the 5th clue, you must include READY_TO_GUESS at the end of your reply.`
       }
     };
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Prompt builder — weaves personal memory into the house's base prompt
+    // ─────────────────────────────────────────────────────────────────────
+    function buildPrompt(id) {
+      var base = HOUSES[id].basePrompt;
+      var mem = typeof MEMORIES !== 'undefined' ? MEMORIES[id] : null;
+      if (!mem || !mem.journal) return base;
+
+      var journal = mem.journal.trim();
+      var rich = journal.split(/\s+/).length >= 40;
+
+      var memBlock =
+        '\nYou hold this personal memory from the traveler who lived here:\n' +
+        '"' + journal + '"\n\n' +
+        (rich
+          ? 'This memory is detailed — draw from it first. Surface specific moments, sensory details, and feelings from it when crafting clues.'
+          : 'This memory is brief — use what fragments exist, and fill the rest with the general mood and atmosphere of the place.') +
+        '\n\n';
+
+      return base
+        .replace('Stages:', memBlock + 'Stages:')
+        .replace(
+          '- One clue per reply, always. Never ask questions back.',
+          '- One clue per reply, always. If the user asks about or hints at something specific, let it guide which memory fragment or detail you surface — but still deliver exactly one poetic clue, never a direct answer.'
+        );
+    }
 
     // ─────────────────────────────────────────────────────────────────────
     // State
@@ -511,7 +539,7 @@ Rules:
       setupAudioUnlock();
 
       // Seed history with system prompt — same as sketch.js setup()
-      conversationHistory = [house.prompt];
+      conversationHistory = [buildPrompt(houseId)];
 
       // Fire the first clue automatically
       callBot(null);
@@ -602,10 +630,17 @@ Rules:
       chatInput.disabled = true;
       showTyping();
 
-      // Inject clue counter so Claude always knows where it is in the stages
+      // Per-clue specificity ladder — vague early, nearly obvious by clue 5
+      const CLUE_GUIDANCE = [
+        'Pure mood and atmosphere only — no geography, food, or transport. Just the feeling of the place.',
+        'Introduce climate, season, or one sensory detail (smell, sound, texture). Still no place names or specific foods.',
+        'Hint at food, transport, or a cultural habit. No country or city names yet.',
+        'Be more specific — something recognizable that meaningfully narrows it down: a landscape feature, architectural style, or cultural detail.',
+        'Nearly give it away — name a specific food, a landmark type, or a well-known cultural icon. End with READY_TO_GUESS on its own line.'
+      ];
+
       const clueStatus = clueCount < MAX_CLUES
-        ? '[Clues given so far: ' + clueCount + ' of ' + MAX_CLUES + '. Give clue #' + (clueCount + 1) + ' now.' +
-          (clueCount === MAX_CLUES - 1 ? ' This is the LAST clue — end your reply with READY_TO_GUESS on its own line.' : '') + ']'
+        ? '[Clue ' + (clueCount + 1) + ' of ' + MAX_CLUES + '. Specificity for this clue: ' + CLUE_GUIDANCE[clueCount] + ']'
         : '[All 5 clues given. Output only: READY_TO_GUESS]';
 
       // Build full prompt — same as sketch.js fullPrompt
@@ -622,8 +657,9 @@ Rules:
           model: "anthropic/claude-3.5-haiku",
           input: {
             prompt: fullPrompt,
-            max_tokens: 80,
-            temperature: 0.8
+            max_tokens: 150,
+            temperature: 0.8,
+            stop_sequences: ["\nYou:", "You:"]
           }
         })
       })
@@ -635,9 +671,11 @@ Rules:
           // Join output array — same as sketch.js: response.output.join("")
           var reply = data.output.join("").trim();
 
-          // Check for stage-2 signal
-          var hasSignal = reply.includes("READY_TO_GUESS");
-          var cleanReply = reply.replace(/READY_TO_GUESS/g, "").trim();
+          // Check for stage-2 signal — match full or truncated variants
+          var hasSignal = /READY_TO[\w_]*/i.test(reply);
+          var cleanReply = reply
+            .split(/\nYou:/i)[0]
+            .replace(/READY_TO[\w_]*/gi, "").trim();
 
           // Save to history — same as sketch.js
           conversationHistory.push("Bot: " + cleanReply);
