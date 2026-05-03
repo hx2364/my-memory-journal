@@ -249,29 +249,24 @@
       helenGrid.appendChild(makeCard('house.html?id=' + h.id, h.image, 'Helen'));
     });
 
-    // ── Load user-submitted houses from NeDB ─────────────────
+    // ── Load user-submitted houses from localStorage index ───
     var userGrid    = document.getElementById('userGrid');
     var userDivider = document.getElementById('userDivider');
 
-    var db = null;
-    try { db = new Datastore({ filename: 'travel_journals', autoload: true }); } catch(e) {}
-
-    if (db) {
-      db.find({}, function(err, docs) {
-        if (err || !docs || docs.length === 0) return;
-
+    try {
+      var entries = JSON.parse(localStorage.getItem('user_entries_index') || '[]');
+      if (entries.length > 0) {
         // Newest first
-        docs.sort(function(a, b) { return (b.timestamp || '').localeCompare(a.timestamp || ''); });
-
+        entries.sort(function(a, b) { return (b.timestamp || '').localeCompare(a.timestamp || ''); });
         userDivider.style.display = '';
-        docs.forEach(function(doc) {
+        entries.forEach(function(doc) {
           var img  = doc.houseImage || 'images/house1.png';
           var name = doc.name || 'Anonymous';
           var href = doc.citySlug ? 'house.html?id=' + doc.citySlug : '#';
           userGrid.appendChild(makeCard(href, img, name));
         });
-      });
-    }
+      }
+    } catch(e) {}
 
     // ── Card builder ─────────────────────────────────────────
     function makeCard(href, imgSrc, authorName) {

@@ -881,6 +881,19 @@
       if (db) { db.insert(entry, function() {}); }
       try { localStorage.setItem('user_journal_' + citySlug, journal); } catch(e) {}
 
+      // Save full metadata to index so gallery.html can read it (NeDB unreliable on file://)
+      try {
+        var index = JSON.parse(localStorage.getItem('user_entries_index') || '[]');
+        index.push({
+          city:      cityDisplay,
+          citySlug:  citySlug,
+          name:      authorName,
+          houseImage: selectedImage,
+          timestamp: entry.timestamp
+        });
+        localStorage.setItem('user_entries_index', JSON.stringify(index));
+      } catch(e) {}
+
       reviewStep.classList.remove('show');
 
       confCity.textContent = 'Your memory of ' + cityDisplay + ' is now part of this journal.';
