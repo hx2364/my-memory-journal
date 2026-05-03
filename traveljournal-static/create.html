@@ -67,7 +67,7 @@
       margin-bottom: 8px;
     }
 
-    /* ── City input ── */
+    /* ── City / country inputs ── */
     .city-input {
       width: 100%;
       background: #111;
@@ -83,6 +83,18 @@
     .city-input:focus { border-color: #c8b89a; }
     .city-input::placeholder { color: #444; }
     .city-input:disabled { opacity: 0.5; }
+    .location-row { display: flex; gap: 12px; }
+    .location-row > div { flex: 1; }
+
+    /* ── Submit hint ── */
+    .submit-hint {
+      font-size: 0.8rem;
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      min-height: 1.2em;
+      transition: opacity 0.2s;
+    }
 
     /* ── Mode toggle ── */
     .mode-toggle {
@@ -433,11 +445,19 @@
     <!-- ── Input step ─────────────────────────────────────────── -->
     <div id="inputStep">
 
-      <!-- City -->
+      <!-- City + Country -->
       <div style="margin-bottom: 28px">
         <p class="section-label">Where did you go?</p>
-        <input class="city-input" id="cityInput" type="text"
-          placeholder="e.g. Tokyo, Santorini, Havana…" autocomplete="off" />
+        <div class="location-row">
+          <div>
+            <input class="city-input" id="cityInput" type="text"
+              placeholder="City (e.g. Tokyo)" autocomplete="off" />
+          </div>
+          <div>
+            <input class="city-input" id="countryInput" type="text"
+              placeholder="Country (e.g. Japan)" autocomplete="off" />
+          </div>
+        </div>
       </div>
 
       <!-- Mode toggle -->
@@ -506,8 +526,9 @@
       </div>
 
       <!-- Review trigger -->
-      <div style="margin-top: 28px">
+      <div style="margin-top: 28px; display: flex; flex-direction: column; gap: 8px;">
         <button class="submit-btn" id="submitBtn" disabled>Review & Save →</button>
+        <p class="submit-hint" id="submitHint"></p>
       </div>
 
     </div><!-- /inputStep -->
@@ -587,6 +608,7 @@
 
     // ── DOM ────────────────────────────────────────────────────
     var cityInput           = document.getElementById('cityInput');
+    var countryInput        = document.getElementById('countryInput');
     var modeWriteBtn        = document.getElementById('modeWriteBtn');
     var modeGuidedBtn       = document.getElementById('modeGuidedBtn');
     var writePanel          = document.getElementById('writePanel');
@@ -744,22 +766,39 @@
 
     // ── Submittable ────────────────────────────────────────────
     cityInput.addEventListener('input', checkSubmittable);
+    countryInput.addEventListener('input', checkSubmittable);
     writeTextarea.addEventListener('input', checkSubmittable);
 
     function checkSubmittable() {
       var hasCity    = cityInput.value.trim().length > 0;
+      var journal    = mode === 'write' ? writeTextarea.value.trim() : assembledTextarea.value.trim();
       var hasContent = mode === 'write'
-        ? writeTextarea.value.trim().length > 0
-        : guidedComplete && assembledTextarea.value.trim().length > 0;
+        ? journal.length >= 20
+        : guidedComplete && journal.length >= 20;
+
       submitBtn.disabled = !(hasCity && hasContent);
+
+      var hint = document.getElementById('submitHint');
+      if (!hasCity) {
+        hint.textContent = 'Enter a city to continue.';
+      } else if (!hasContent) {
+        var len = journal.length;
+        hint.textContent = mode === 'guided' && !guidedComplete
+          ? 'Complete the questions to continue.'
+          : 'Journal needs at least 20 characters (' + len + ' so far).';
+      } else {
+        hint.textContent = '';
+      }
     }
 
     // ── Review step ────────────────────────────────────────────
     submitBtn.addEventListener('click', function() {
-      var city    = cityInput.value.trim();
+      var city    = toTitleCase(cityInput.value.trim());
+      var country = toTitleCase(countryInput.value.trim());
+      var cityDisplay = country ? city + ', ' + country : city;
       var journal = mode === 'write' ? writeTextarea.value.trim() : assembledTextarea.value.trim();
 
-      reviewCity.textContent    = city;
+      reviewCity.textContent    = cityDisplay;
       reviewJournal.textContent = journal;
 
       buildCarousel();
@@ -798,13 +837,15 @@
 
     // ── Confirm & Save ─────────────────────────────────────────
     confirmBtn.addEventListener('click', function() {
-      var city         = cityInput.value.trim();
+      var city         = toTitleCase(cityInput.value.trim());
+      var country      = toTitleCase(countryInput.value.trim());
+      var cityDisplay  = country ? city + ', ' + country : city;
       var journal      = mode === 'write' ? writeTextarea.value.trim() : assembledTextarea.value.trim();
       var collectedVia = mode === 'write' ? 'freeform' : 'guided';
       var citySlug     = city.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
       var entry = {
-        city:          city,
+        city:          cityDisplay,
         citySlug:      citySlug,
         journal:       journal,
         houseImage:    selectedImage,
@@ -817,9 +858,9 @@
 
       reviewStep.classList.remove('show');
 
-      confCity.textContent = 'Your memory of ' + city + ' is now part of this journal.';
+      confCity.textContent = 'Your memory of ' + cityDisplay + ' is now part of this journal.';
 
-      var houseId = CITY_TO_HOUSE[citySlug];
+      var houseId = CITY_TO_HOUSE[citySlug] || CITY_TO_HOUSE[country.toLowerCase().replace(/[^a-z0-9]+/g,'_')];
       if (houseId) {
         var a = document.createElement('a');
         a.className   = 'play-btn';
@@ -838,6 +879,12 @@
     });
 
     // ── Helpers ────────────────────────────────────────────────
+    function toTitleCase(str) {
+      return str.replace(/\w\S*/g, function(w) {
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      });
+    }
+
     function escHtml(str) {
       return String(str)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
