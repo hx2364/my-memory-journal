@@ -896,7 +896,12 @@ Rules:
         loadingEl.textContent = 'Preparing your options…';
         guessOptions.appendChild(loadingEl);
 
-        Promise.resolve(userHouseOptionsPromise || Promise.resolve()).then(function() {
+        // Trigger now if READY_TO_GUESS came before clue 5 (parallel trigger never fired)
+        if (!userHouseOptionsPromise) {
+          userHouseOptionsPromise = generateUserHouseOptions();
+        }
+
+        Promise.resolve(userHouseOptionsPromise).then(function() {
           guessOptions.innerHTML = '';
           var opts = userHouseOptions || [userEntry.city]; // fallback: show at least the correct answer
           opts.forEach(function(opt) {
