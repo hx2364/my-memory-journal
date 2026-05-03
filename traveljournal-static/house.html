@@ -215,54 +215,6 @@
     .guess-result.correct-result { background: #1a3020; border: 1px solid #4caf50; color: #a5d6a7; }
     .guess-result.wrong-result   { background: #2a1010; border: 1px solid #e53935; color: #ef9a9a; }
 
-    /* ── Notes ── */
-    .notes-section { width: 100%; display: none; flex-direction: column; gap: 20px; }
-    .notes-section.visible { display: flex; }
-
-    .notes-divider {
-      display: flex; align-items: center; gap: 12px;
-      color: #c8b89a; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase;
-    }
-    .notes-divider::before, .notes-divider::after { content: ''; flex: 1; height: 1px; background: #333; }
-
-    .notes-title { font-family: 'Permanent Marker', cursive; font-size: 1.2rem; color: #f0e8d5; text-align: center; }
-    .notes-subtitle { text-align: center; font-style: italic; color: #888; font-size: 0.88rem; }
-
-    .note-form {
-      display: flex; flex-direction: column; gap: 10px;
-      background: url('images/notes1.png') center/cover no-repeat;
-      padding: 24px 20px; border-radius: 4px; box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-    }
-    .note-form input, .note-form textarea {
-      background: transparent; border: none; border-bottom: 1.5px solid #b0a090;
-      color: #2a1a0a; font-family: 'Lora', serif; font-size: 0.93rem;
-      padding: 6px 4px; outline: none; resize: none; width: 100%;
-    }
-    .note-form input::placeholder, .note-form textarea::placeholder { color: #8a7060; }
-    .note-form textarea { min-height: 80px; }
-
-    .note-submit {
-      align-self: flex-end; background: #5a3a1a; color: #f0e8d5; border: none;
-      border-radius: 999px; padding: 10px 24px; font-family: 'Lora', serif;
-      font-size: 0.88rem; cursor: pointer; transition: background 0.2s;
-    }
-    .note-submit:hover { background: #7a5030; }
-
-    .notes-wall { display: flex; flex-direction: column; gap: 12px; }
-
-    .note-card {
-      background: url('images/notes2.png') center/cover no-repeat;
-      padding: 18px 20px; border-radius: 4px; box-shadow: 0 3px 14px rgba(0,0,0,0.4);
-      animation: note-appear 0.4s ease;
-    }
-    @keyframes note-appear { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-
-    .note-card__name { font-weight: 600; color: #3a2010; font-size: 0.88rem; margin-bottom: 4px; }
-    .note-card__text { color: #2a1a0a; font-size: 0.9rem; line-height: 1.6; }
-    .note-card__time { margin-top: 6px; font-size: 0.75rem; color: #8a7060; font-style: italic; }
-
-    .notes-empty { text-align: center; color: #555; font-style: italic; font-size: 0.88rem; padding: 12px; }
-
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
@@ -317,20 +269,6 @@
       <p class="guess-title">Where in the world is this house?</p>
       <div class="guess-options" id="guessOptions"></div>
       <div class="guess-result" id="guessResult"></div>
-    </section>
-
-    <section class="notes-section" id="notesSection">
-      <div class="notes-divider">Visitor Notes</div>
-      <h2 class="notes-title">Leave Your Feeling</h2>
-      <p class="notes-subtitle">Have you been here? Dream of going? Share your thoughts.</p>
-      <div class="note-form">
-        <input type="text" id="noteName" placeholder="Your name (optional)" maxlength="40" />
-        <textarea id="noteText" placeholder="Write your feeling about this place…" maxlength="300"></textarea>
-        <button class="note-submit" id="noteSubmit">Leave Note ✦</button>
-      </div>
-      <div class="notes-wall" id="notesWall">
-        <p class="notes-empty" id="notesEmpty">No notes yet. Be the first to leave one!</p>
-      </div>
     </section>
   </main>
 
@@ -521,12 +459,6 @@ Rules:
     const guessSection = document.getElementById('guessSection');
     const guessOptions = document.getElementById('guessOptions');
     const guessResult  = document.getElementById('guessResult');
-    const notesSection = document.getElementById('notesSection');
-    const notesWall    = document.getElementById('notesWall');
-    const notesEmpty   = document.getElementById('notesEmpty');
-    const noteSubmit   = document.getElementById('noteSubmit');
-    const noteName     = document.getElementById('noteName');
-    const noteText     = document.getElementById('noteText');
     const dots         = [0,1,2,3,4].map(i => document.getElementById('dot'+i));
 
     // ─────────────────────────────────────────────────────────────────────
@@ -543,9 +475,6 @@ Rules:
 
       // Fire the first clue automatically
       callBot(null);
-
-      // Load saved notes from localStorage
-      loadNotes();
     }
 
     function setupAudioUnlock() {
@@ -823,60 +752,9 @@ Rules:
       }
 
       setTimeout(function() {
-        notesSection.classList.add('visible');
-        notesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 1200);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Notes — saved to localStorage so they persist without a server
-    // ─────────────────────────────────────────────────────────────────────
-    var NOTES_KEY = 'traveljournal_notes_' + houseId;
-
-    function loadNotes() {
-      var saved = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
-      saved.forEach(renderNote);
-      if (saved.length > 0) notesEmpty.style.display = 'none';
-    }
-
-    function saveNote(note) {
-      var saved = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
-      saved.push(note);
-      localStorage.setItem(NOTES_KEY, JSON.stringify(saved));
-    }
-
-    function renderNote(note) {
-      notesEmpty.style.display = 'none';
-      var card = document.createElement('div');
-      card.className = 'note-card';
-      card.innerHTML =
-        '<div class="note-card__name">' + escHtml(note.name || 'Anonymous') + '</div>' +
-        '<div class="note-card__text">' + escHtml(note.text) + '</div>' +
-        '<div class="note-card__time">' + escHtml(note.timestamp || '') + '</div>';
-      notesWall.appendChild(card);
-    }
-
-    noteSubmit.addEventListener('click', function() {
-      var name = noteName.value.trim();
-      var text = noteText.value.trim();
-      if (!text) return;
-
-      var note = {
-        name: name.slice(0, 40) || 'Anonymous',
-        text: text.slice(0, 300),
-        timestamp: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-      };
-
-      saveNote(note);
-      renderNote(note);
-      noteName.value = '';
-      noteText.value = '';
-    });
-
-    function escHtml(str) {
-      return String(str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        var q = 'id=' + encodeURIComponent(houseId) + '&place=' + encodeURIComponent(correct);
+        location.href = 'journal.html?' + q;
+      }, 2200);
     }
 
     // ─────────────────────────────────────────────────────────────────────
