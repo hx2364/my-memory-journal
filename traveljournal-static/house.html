@@ -474,7 +474,12 @@ Rules:
     // ─────────────────────────────────────────────────────────────────────
     function buildPrompt(id) {
       var base = HOUSES[id].basePrompt;
-      var mem = typeof MEMORIES !== 'undefined' ? MEMORIES[id] : null;
+      // User-submitted journal takes priority over the placeholder
+      var userJournal = null;
+      try { userJournal = localStorage.getItem('user_journal_' + id); } catch(e) {}
+      var mem = userJournal
+        ? { journal: userJournal, collected_via: 'user' }
+        : (typeof MEMORIES !== 'undefined' ? MEMORIES[id] : null);
       if (!mem || !mem.journal) return base;
 
       var journal = mem.journal.trim();
