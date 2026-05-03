@@ -1,1 +1,3 @@
 # my-memory-journal
+
+hi
