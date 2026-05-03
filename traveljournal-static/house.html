@@ -488,7 +488,12 @@ Rules:
           : 'This memory is brief — use what fragments exist, and fill the rest with the general mood and atmosphere of the place.') +
         '\n\n';
 
-      return base.replace('Stages:', memBlock + 'Stages:');
+      return base
+        .replace('Stages:', memBlock + 'Stages:')
+        .replace(
+          '- One clue per reply, always. Never ask questions back.',
+          '- One clue per reply, always. If the user asks about or hints at something specific, let it guide which memory fragment or detail you surface — but still deliver exactly one poetic clue, never a direct answer.'
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -625,10 +630,17 @@ Rules:
       chatInput.disabled = true;
       showTyping();
 
-      // Inject clue counter so Claude always knows where it is in the stages
+      // Per-clue specificity ladder — vague early, nearly obvious by clue 5
+      const CLUE_GUIDANCE = [
+        'Pure mood and atmosphere only — no geography, food, or transport. Just the feeling of the place.',
+        'Introduce climate, season, or one sensory detail (smell, sound, texture). Still no place names or specific foods.',
+        'Hint at food, transport, or a cultural habit. No country or city names yet.',
+        'Be more specific — something recognizable that meaningfully narrows it down: a landscape feature, architectural style, or cultural detail.',
+        'Nearly give it away — name a specific food, a landmark type, or a well-known cultural icon. End with READY_TO_GUESS on its own line.'
+      ];
+
       const clueStatus = clueCount < MAX_CLUES
-        ? '[Clues given so far: ' + clueCount + ' of ' + MAX_CLUES + '. Give clue #' + (clueCount + 1) + ' now.' +
-          (clueCount === MAX_CLUES - 1 ? ' This is the LAST clue — end your reply with READY_TO_GUESS on its own line.' : '') + ']'
+        ? '[Clue ' + (clueCount + 1) + ' of ' + MAX_CLUES + '. Specificity for this clue: ' + CLUE_GUIDANCE[clueCount] + ']'
         : '[All 5 clues given. Output only: READY_TO_GUESS]';
 
       // Build full prompt — same as sketch.js fullPrompt
