@@ -517,6 +517,46 @@ Rules:
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // AI wrong-answer generator for user houses (fires during clue 5)
+    // ─────────────────────────────────────────────────────────────────────
+    function generateUserHouseOptions() {
+      var city = userEntry.city;
+      var cluesSoFar = conversationHistory
+        .filter(function(l) { return l.startsWith('Bot: '); })
+        .map(function(l) { return l.replace('Bot: ', '').trim(); })
+        .join(' | ');
+
+      var prompt =
+        'The correct answer to a travel memory guessing game is: "' + city + '".\n' +
+        'Clues given so far: ' + (cluesSoFar || 'none') + '\n\n' +
+        'Generate exactly 3 wrong-answer cities that a player could plausibly confuse with "' + city + '" based on those clues. ' +
+        'Pick cities with a similar vibe, region, or atmosphere — close enough to be tempting but not the same. ' +
+        'Return ONLY a JSON array of exactly 3 strings in "City, Country" format. No other text. Example: ["Boston, United States","Montreal, Canada","Chicago, United States"]';
+
+      return fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+        body: JSON.stringify({
+          model: 'anthropic/claude-3.5-haiku',
+          input: { prompt: prompt, max_tokens: 80, temperature: 0.9 }
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.output) return;
+        try {
+          var wrong = JSON.parse(data.output.join('').trim());
+          if (!Array.isArray(wrong) || wrong.length < 3) return;
+          // Shuffle correct answer into a random position
+          var opts = wrong.slice(0, 3);
+          opts.splice(Math.floor(Math.random() * 4), 0, city);
+          userHouseOptions = opts;
+        } catch(e) {}
+      })
+      .catch(function() {});
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // State
     // ─────────────────────────────────────────────────────────────────────
     const params  = new URLSearchParams(location.search);
@@ -537,6 +577,8 @@ Rules:
     let conversationHistory = []; // flat string array — same as sketch.js
     let clueCount = 0;
     let gameOver  = false;
+    var userHouseOptions = null;         // 4-item shuffled array for user house guess
+    var userHouseOptionsPromise = null;  // resolves when options are ready
     let currentSpeechAudio = null;
     let audioUnlocked = false;
     let pendingSpeechText = "";
@@ -672,6 +714,11 @@ Rules:
       const clueStatus = clueCount < MAX_CLUES
         ? '[Clue ' + (clueCount + 1) + ' of ' + MAX_CLUES + '. Specificity for this clue: ' + CLUE_GUIDANCE[clueCount] + ']'
         : '[All 5 clues given. Output only: READY_TO_GUESS]';
+
+      // Fire options generation in parallel while clue 5 is being fetched
+      if (isUserHouse && clueCount === MAX_CLUES - 1 && !userHouseOptionsPromise) {
+        userHouseOptionsPromise = generateUserHouseOptions();
+      }
 
       // Build full prompt — same as sketch.js fullPrompt
       const fullPrompt = conversationHistory.join("\n") + "\n" + clueStatus + "\nBot:";
@@ -821,23 +868,23 @@ Rules:
       guessSection.classList.add('visible');
 
       if (isUserHouse) {
-        // Text input guess for user-submitted cities
-        var inp = document.createElement('input');
-        inp.className = 'chat-input';
-        inp.type = 'text';
-        inp.placeholder = 'Type the city and country…';
-        inp.style.cssText = 'width:100%; border-radius:12px; font-size:1rem; padding:14px 18px;';
-        var submitGuess = document.createElement('button');
-        submitGuess.className = 'chat-send';
-        submitGuess.textContent = 'Guess';
-        submitGuess.style.borderRadius = '12px';
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex; gap:10px; width:100%;';
-        row.appendChild(inp);
-        row.appendChild(submitGuess);
-        guessOptions.appendChild(row);
-        submitGuess.addEventListener('click', function() { handleGuess(inp.value, null); });
-        inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') handleGuess(inp.value, null); });
+        // Show a loading state while the options promise resolves
+        var loadingEl = document.createElement('p');
+        loadingEl.style.cssText = 'text-align:center;color:#666;font-style:italic;font-size:0.9rem;padding:16px;width:100%';
+        loadingEl.textContent = 'Preparing your options…';
+        guessOptions.appendChild(loadingEl);
+
+        Promise.resolve(userHouseOptionsPromise || Promise.resolve()).then(function() {
+          guessOptions.innerHTML = '';
+          var opts = userHouseOptions || [userEntry.city]; // fallback: show at least the correct answer
+          opts.forEach(function(opt) {
+            var btn = document.createElement('button');
+            btn.className = 'guess-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', function() { handleGuess(opt, btn); });
+            guessOptions.appendChild(btn);
+          });
+        });
       } else {
         house.options.forEach(function(opt) {
           var btn = document.createElement('button');
