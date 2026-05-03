@@ -108,7 +108,7 @@
     .mode-btn.active { background: #c8b89a; color: #111; font-weight: 600; }
     .mode-btn:disabled { cursor: not-allowed; }
 
-    /* ── Write panel ── */
+    /* ── Shared textarea style ── */
     .journal-textarea {
       width: 100%;
       min-height: 200px;
@@ -126,7 +126,7 @@
     }
     .journal-textarea:focus { border-color: #c8b89a; }
     .journal-textarea::placeholder { color: #444; }
-    .journal-textarea:disabled { opacity: 0.5; }
+    .journal-textarea:disabled { opacity: 0.5; resize: none; }
 
     /* ── Guided panel ── */
     .guided-inner { display: flex; flex-direction: column; gap: 16px; }
@@ -194,14 +194,9 @@
       transition: background 0.2s;
     }
     .next-btn:hover { background: #e0d0b0; }
-    .next-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
     /* ── Accordion ── */
-    .accordion {
-      border: 1px solid #2a2010;
-      border-radius: 10px;
-      overflow: hidden;
-    }
+    .accordion { border: 1px solid #2a2010; border-radius: 10px; overflow: hidden; }
     .accordion-header {
       display: flex;
       justify-content: space-between;
@@ -227,14 +222,12 @@
       gap: 14px;
     }
     .accordion-body.hidden { display: none; }
-
     .qa-pair { display: flex; flex-direction: column; gap: 3px; }
     .qa-q { font-size: 0.79rem; color: #666; font-style: italic; }
     .qa-a { font-size: 0.92rem; color: #d8ccb8; line-height: 1.55; }
 
     /* ── Assembled preview ── */
     .preview-block { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
-
     .generating {
       display: flex;
       gap: 6px;
@@ -255,7 +248,118 @@
     .gen-dot:nth-child(3) { animation-delay: 0.4s; }
     @keyframes gdot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
 
-    /* ── Submit ── */
+    /* ── Review step ── */
+    .review-section {
+      display: none;
+      flex-direction: column;
+      gap: 22px;
+      animation: fade-up 0.35s ease;
+    }
+    .review-section.show { display: flex; }
+    @keyframes fade-up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    .review-city {
+      font-family: 'Lobster', cursive;
+      font-size: 1.7rem;
+      color: #f0e8d5;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+
+    .review-journal {
+      background: #0f0f0d;
+      border: 1px solid #2a2010;
+      border-radius: 12px;
+      padding: 18px 20px;
+      color: #d8ccb8;
+      font-size: 0.94rem;
+      line-height: 1.78;
+      font-style: italic;
+      white-space: pre-wrap;
+    }
+
+    /* ── House carousel ── */
+    .carousel-wrap { display: flex; flex-direction: column; gap: 12px; }
+
+    .carousel {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 12px 4px 16px;
+      scrollbar-width: thin;
+      scrollbar-color: #2a2010 transparent;
+    }
+    .carousel::-webkit-scrollbar { height: 4px; }
+    .carousel::-webkit-scrollbar-thumb { background: #2a2010; border-radius: 2px; }
+
+    .carousel-item {
+      flex-shrink: 0;
+      cursor: pointer;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      padding: 8px;
+      background: #0f0f0d;
+      transition: border-color 0.2s, background 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .carousel-item:hover { background: #1a1a14; }
+    .carousel-item.selected {
+      border-color: #f5c842;
+      background: #1a1a0a;
+      box-shadow: 0 0 14px rgba(245,200,66,0.25);
+    }
+    .carousel-item img {
+      width: 72px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 0 10px rgba(255,200,80,0.45));
+      transition: filter 0.2s;
+    }
+    .carousel-item.selected img {
+      filter: drop-shadow(0 0 18px rgba(255,200,80,0.9));
+    }
+    .carousel-item__num {
+      font-size: 0.68rem;
+      color: #555;
+      letter-spacing: 0.08em;
+    }
+    .carousel-item.selected .carousel-item__num { color: #c8b89a; }
+
+    /* ── Review action row ── */
+    .review-actions { display: flex; gap: 12px; }
+    .edit-btn {
+      flex: 1;
+      background: transparent;
+      border: 1.5px solid #3a3020;
+      color: #888;
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'Lora', serif;
+      font-size: 0.93rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .edit-btn:hover { border-color: #c8b89a; color: #c8b89a; }
+    .confirm-btn {
+      flex: 2;
+      background: #c8b89a;
+      color: #111;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'Lora', serif;
+      font-size: 0.97rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      letter-spacing: 0.02em;
+    }
+    .confirm-btn:hover { background: #e0d0b0; }
+
+    /* ── Submit (review trigger) ── */
     .submit-btn {
       width: 100%;
       background: #c8b89a;
@@ -289,25 +393,9 @@
     .confirmation.show { display: flex; }
     @keyframes conf-in { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
     .conf-icon { font-size: 2.2rem; }
-    .conf-title {
-      font-family: 'Lobster', cursive;
-      font-size: 2rem;
-      color: #f5c842;
-      font-weight: 400;
-      letter-spacing: 0.02em;
-    }
-    .conf-city {
-      font-style: italic;
-      color: #c8b89a;
-      font-size: 1rem;
-      line-height: 1.6;
-      max-width: 420px;
-    }
-    .conf-sub {
-      font-size: 0.85rem;
-      color: #555;
-      font-style: italic;
-    }
+    .conf-title { font-family: 'Lobster', cursive; font-size: 2rem; color: #f5c842; font-weight: 400; }
+    .conf-city { font-style: italic; color: #c8b89a; font-size: 1rem; line-height: 1.6; max-width: 420px; }
+    .conf-sub { font-size: 0.85rem; color: #555; font-style: italic; }
     .play-btn {
       display: inline-block;
       margin-top: 6px;
@@ -328,6 +416,7 @@
     @media (max-width: 520px) {
       .header { padding: 12px 16px; }
       .mode-btn { font-size: 0.82rem; padding: 9px 10px; }
+      .carousel-item img { width: 58px; }
     }
   </style>
 </head>
@@ -341,87 +430,114 @@
 
   <main class="main">
 
-    <!-- City -->
-    <div>
-      <p class="section-label">Where did you go?</p>
-      <input class="city-input" id="cityInput" type="text"
-        placeholder="e.g. Tokyo, Santorini, Havana…" autocomplete="off" />
-    </div>
+    <!-- ── Input step ─────────────────────────────────────────── -->
+    <div id="inputStep">
 
-    <!-- Mode toggle -->
-    <div>
-      <p class="section-label">How would you like to share your memory?</p>
-      <div class="mode-toggle">
-        <button class="mode-btn active" id="modeWriteBtn">Write it yourself</button>
-        <button class="mode-btn"        id="modeGuidedBtn">Tell me about it</button>
+      <!-- City -->
+      <div style="margin-bottom: 28px">
+        <p class="section-label">Where did you go?</p>
+        <input class="city-input" id="cityInput" type="text"
+          placeholder="e.g. Tokyo, Santorini, Havana…" autocomplete="off" />
       </div>
-    </div>
 
-    <!-- Write panel -->
-    <div id="writePanel">
-      <textarea class="journal-textarea" id="writeTextarea"
-        placeholder="Write about your time there — what you saw, ate, felt, noticed…"></textarea>
-    </div>
-
-    <!-- Guided panel -->
-    <div id="guidedPanel" style="display:none">
-      <div class="guided-inner">
-
-        <div class="q-progress" id="qProgress">
-          <div class="q-dot active" id="qdot0"></div>
-          <div class="q-dot"        id="qdot1"></div>
-          <div class="q-dot"        id="qdot2"></div>
-          <div class="q-dot"        id="qdot3"></div>
-          <div class="q-dot"        id="qdot4"></div>
-          <div class="q-dot"        id="qdot5"></div>
+      <!-- Mode toggle -->
+      <div style="margin-bottom: 28px">
+        <p class="section-label">How would you like to share your memory?</p>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="modeWriteBtn">Write it yourself</button>
+          <button class="mode-btn"        id="modeGuidedBtn">Tell me about it</button>
         </div>
-
-        <!-- Question + answer input -->
-        <div id="questionArea">
-          <div class="question-bubble">
-            <span class="question-bubble__avatar">📖</span>
-            <span id="questionText"></span>
-          </div>
-          <div class="answer-area" style="margin-top:10px">
-            <textarea class="answer-textarea" id="answerInput"
-              placeholder="Take your time…" rows="3"></textarea>
-            <button class="next-btn" id="nextBtn">Next →</button>
-          </div>
-        </div>
-
-        <!-- Post-questions: accordion + assembled preview -->
-        <div id="assembledSection" style="display:none">
-
-          <div class="accordion" id="qaAccordion">
-            <div class="accordion-header" id="accordionHeader">
-              <span>Your answers</span>
-              <span class="accordion-chevron" id="accordionChevron">▾</span>
-            </div>
-            <div class="accordion-body hidden" id="accordionBody"></div>
-          </div>
-
-          <div class="preview-block">
-            <p class="section-label">Your memory, assembled</p>
-            <div class="generating" id="generatingIndicator">
-              <span class="gen-dot"></span>
-              <span class="gen-dot"></span>
-              <span class="gen-dot"></span>
-              <span style="margin-left:5px">Writing your journal…</span>
-            </div>
-            <textarea class="journal-textarea" id="assembledTextarea"
-              style="display:none; min-height:170px"
-              placeholder="Your assembled journal will appear here…"></textarea>
-          </div>
-
-        </div>
-
       </div>
-    </div>
 
-    <!-- Submit -->
-    <button class="submit-btn" id="submitBtn" disabled>Save this memory ✦</button>
+      <!-- Write panel -->
+      <div id="writePanel">
+        <textarea class="journal-textarea" id="writeTextarea"
+          placeholder="Write about your time there — what you saw, ate, felt, noticed…"></textarea>
+      </div>
 
-    <!-- Confirmation -->
+      <!-- Guided panel -->
+      <div id="guidedPanel" style="display:none">
+        <div class="guided-inner">
+
+          <div class="q-progress">
+            <div class="q-dot active" id="qdot0"></div>
+            <div class="q-dot"        id="qdot1"></div>
+            <div class="q-dot"        id="qdot2"></div>
+            <div class="q-dot"        id="qdot3"></div>
+            <div class="q-dot"        id="qdot4"></div>
+            <div class="q-dot"        id="qdot5"></div>
+          </div>
+
+          <div id="questionArea">
+            <div class="question-bubble">
+              <span class="question-bubble__avatar">📖</span>
+              <span id="questionText"></span>
+            </div>
+            <div class="answer-area" style="margin-top:10px">
+              <textarea class="answer-textarea" id="answerInput"
+                placeholder="Take your time…" rows="3"></textarea>
+              <button class="next-btn" id="nextBtn">Next →</button>
+            </div>
+          </div>
+
+          <div id="assembledSection" style="display:none">
+            <div class="accordion">
+              <div class="accordion-header" id="accordionHeader">
+                <span>Your answers</span>
+                <span class="accordion-chevron" id="accordionChevron">▾</span>
+              </div>
+              <div class="accordion-body hidden" id="accordionBody"></div>
+            </div>
+            <div class="preview-block">
+              <p class="section-label" style="margin-top:16px">Your memory, assembled</p>
+              <div class="generating" id="generatingIndicator">
+                <span class="gen-dot"></span>
+                <span class="gen-dot"></span>
+                <span class="gen-dot"></span>
+                <span style="margin-left:5px">Writing your journal…</span>
+              </div>
+              <textarea class="journal-textarea" id="assembledTextarea"
+                style="display:none; min-height:170px"
+                placeholder="Your assembled journal will appear here…"></textarea>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Review trigger -->
+      <div style="margin-top: 28px">
+        <button class="submit-btn" id="submitBtn" disabled>Review & Save →</button>
+      </div>
+
+    </div><!-- /inputStep -->
+
+    <!-- ── Review step ────────────────────────────────────────── -->
+    <div class="review-section" id="reviewStep">
+
+      <div>
+        <p class="section-label">Your memory of</p>
+        <p class="review-city" id="reviewCity"></p>
+      </div>
+
+      <div>
+        <p class="section-label">Journal</p>
+        <div class="review-journal" id="reviewJournal"></div>
+      </div>
+
+      <div class="carousel-wrap">
+        <p class="section-label">Choose your house</p>
+        <div class="carousel" id="houseCarousel"></div>
+      </div>
+
+      <div class="review-actions">
+        <button class="edit-btn" id="editBtn">← Edit</button>
+        <button class="confirm-btn" id="confirmBtn">Confirm & Save ✦</button>
+      </div>
+
+    </div><!-- /reviewStep -->
+
+    <!-- ── Confirmation ───────────────────────────────────────── -->
     <div class="confirmation" id="confirmation">
       <div class="conf-icon">✦</div>
       <h2 class="conf-title">Memory saved.</h2>
@@ -433,11 +549,10 @@
   </main>
 
   <script>
-    const PROXY_URL  = "https://itp-ima-replicate-proxy.web.app/api/create_n_get";
-    const authToken  = "";
+    var PROXY_URL = "https://itp-ima-replicate-proxy.web.app/api/create_n_get";
+    var authToken = "";
 
-    // Map common city/country names → known house IDs
-    const CITY_TO_HOUSE = {
+    var CITY_TO_HOUSE = {
       tokyo: 'tokyo',     japan: 'tokyo',
       jerusalem: 'israel', israel: 'israel',
       santorini: 'greece', mykonos: 'greece', greece: 'greece',
@@ -446,7 +561,7 @@
       bangkok: 'bangkok',  thailand: 'bangkok'
     };
 
-    const QUESTIONS = [
+    var QUESTIONS = [
       "When did you visit — what time of year was it?",
       "What's the first thing you remember when you arrived?",
       "What did you eat or drink that you still think about?",
@@ -455,55 +570,63 @@
       "What would you tell someone who'd never been?"
     ];
 
-    // NeDB (falls back gracefully if CDN load fails)
+    var HOUSE_IMAGES = [];
+    for (var i = 1; i <= 15; i++) { HOUSE_IMAGES.push('images/house' + i + '.png'); }
+
     var db = null;
     try { db = new Datastore({ filename: 'travel_journals', autoload: true }); } catch(e) {}
 
-    // ── State ──────────────────────────────────────────────────────────
+    // ── State ──────────────────────────────────────────────────
     var mode           = 'write';
     var writeDraft     = '';
     var currentQ       = 0;
     var answers        = new Array(QUESTIONS.length).fill('');
     var assembledText  = '';
     var guidedComplete = false;
+    var selectedImage  = HOUSE_IMAGES[0];
 
-    // ── DOM ────────────────────────────────────────────────────────────
-    var cityInput          = document.getElementById('cityInput');
-    var modeWriteBtn       = document.getElementById('modeWriteBtn');
-    var modeGuidedBtn      = document.getElementById('modeGuidedBtn');
-    var writePanel         = document.getElementById('writePanel');
-    var guidedPanel        = document.getElementById('guidedPanel');
-    var writeTextarea      = document.getElementById('writeTextarea');
-    var questionArea       = document.getElementById('questionArea');
-    var questionText       = document.getElementById('questionText');
-    var answerInput        = document.getElementById('answerInput');
-    var nextBtn            = document.getElementById('nextBtn');
-    var assembledSection   = document.getElementById('assembledSection');
-    var assembledTextarea  = document.getElementById('assembledTextarea');
-    var generatingIndicator= document.getElementById('generatingIndicator');
-    var accordionHeader    = document.getElementById('accordionHeader');
-    var accordionBody      = document.getElementById('accordionBody');
-    var accordionChevron   = document.getElementById('accordionChevron');
-    var submitBtn          = document.getElementById('submitBtn');
-    var confirmation       = document.getElementById('confirmation');
-    var confCity           = document.getElementById('confCity');
-    var playBtnWrap        = document.getElementById('playBtnWrap');
-    var dots               = QUESTIONS.map(function(_, i) { return document.getElementById('qdot' + i); });
+    // ── DOM ────────────────────────────────────────────────────
+    var cityInput           = document.getElementById('cityInput');
+    var modeWriteBtn        = document.getElementById('modeWriteBtn');
+    var modeGuidedBtn       = document.getElementById('modeGuidedBtn');
+    var writePanel          = document.getElementById('writePanel');
+    var guidedPanel         = document.getElementById('guidedPanel');
+    var writeTextarea       = document.getElementById('writeTextarea');
+    var questionArea        = document.getElementById('questionArea');
+    var questionText        = document.getElementById('questionText');
+    var answerInput         = document.getElementById('answerInput');
+    var nextBtn             = document.getElementById('nextBtn');
+    var assembledSection    = document.getElementById('assembledSection');
+    var assembledTextarea   = document.getElementById('assembledTextarea');
+    var generatingIndicator = document.getElementById('generatingIndicator');
+    var accordionHeader     = document.getElementById('accordionHeader');
+    var accordionBody       = document.getElementById('accordionBody');
+    var accordionChevron    = document.getElementById('accordionChevron');
+    var submitBtn           = document.getElementById('submitBtn');
+    var inputStep           = document.getElementById('inputStep');
+    var reviewStep          = document.getElementById('reviewStep');
+    var reviewCity          = document.getElementById('reviewCity');
+    var reviewJournal       = document.getElementById('reviewJournal');
+    var houseCarousel       = document.getElementById('houseCarousel');
+    var editBtn             = document.getElementById('editBtn');
+    var confirmBtn          = document.getElementById('confirmBtn');
+    var confirmation        = document.getElementById('confirmation');
+    var confCity            = document.getElementById('confCity');
+    var playBtnWrap         = document.getElementById('playBtnWrap');
+    var dots                = QUESTIONS.map(function(_, i) { return document.getElementById('qdot' + i); });
 
-    // ── Mode switch ────────────────────────────────────────────────────
+    // ── Mode switch ────────────────────────────────────────────
     modeWriteBtn.addEventListener('click', function() { switchMode('write'); });
     modeGuidedBtn.addEventListener('click', function() { switchMode('guided'); });
 
     function switchMode(newMode) {
       if (newMode === mode) return;
       mode = newMode;
-
       if (mode === 'write') {
         modeWriteBtn.classList.add('active');
         modeGuidedBtn.classList.remove('active');
         writePanel.style.display = '';
         guidedPanel.style.display = 'none';
-        // If guided produced text and write is still empty, populate it
         if (guidedComplete && assembledText && !writeTextarea.value.trim()) {
           writeTextarea.value = assembledText;
         }
@@ -514,11 +637,10 @@
         guidedPanel.style.display = '';
         writePanel.style.display = 'none';
       }
-
       checkSubmittable();
     }
 
-    // ── Guided Q&A ─────────────────────────────────────────────────────
+    // ── Guided Q&A ─────────────────────────────────────────────
     function showQuestion(index) {
       questionText.textContent = QUESTIONS[index];
       answerInput.value = answers[index] || '';
@@ -530,7 +652,7 @@
     function updateDots(activeIndex) {
       dots.forEach(function(d, i) {
         d.classList.remove('active', 'done');
-        if (i < activeIndex)       d.classList.add('done');
+        if (i < activeIndex)        d.classList.add('done');
         else if (i === activeIndex) d.classList.add('active');
       });
     }
@@ -541,14 +663,11 @@
     });
 
     function submitAnswer() {
-      var answer = answerInput.value.trim();
-      answers[currentQ] = answer;
-
+      answers[currentQ] = answerInput.value.trim();
       if (currentQ < QUESTIONS.length - 1) {
         currentQ++;
         showQuestion(currentQ);
       } else {
-        // All questions answered
         dots.forEach(function(d) { d.classList.remove('active'); d.classList.add('done'); });
         questionArea.style.display = 'none';
         assembledSection.style.display = '';
@@ -557,7 +676,7 @@
       }
     }
 
-    // ── Accordion ──────────────────────────────────────────────────────
+    // ── Accordion ──────────────────────────────────────────────
     function buildAccordion() {
       accordionBody.innerHTML = '';
       QUESTIONS.forEach(function(q, i) {
@@ -565,7 +684,7 @@
         pair.className = 'qa-pair';
         pair.innerHTML =
           '<div class="qa-q">' + escHtml(q) + '</div>' +
-          '<div class="qa-a">'  + escHtml(answers[i] || '—') + '</div>';
+          '<div class="qa-a">' + escHtml(answers[i] || '—') + '</div>';
         accordionBody.appendChild(pair);
       });
     }
@@ -576,7 +695,7 @@
       accordionChevron.classList.toggle('open', isHidden);
     });
 
-    // ── Journal generation ─────────────────────────────────────────────
+    // ── AI journal generation ──────────────────────────────────
     function generateJournal() {
       generatingIndicator.style.display = 'flex';
       assembledTextarea.style.display = 'none';
@@ -596,22 +715,18 @@
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
         body: JSON.stringify({
           model: 'anthropic/claude-3.5-haiku',
-          input: { prompt: prompt, max_tokens: 200, temperature: 0.7 }
+          input: { prompt: prompt, max_tokens: 220, temperature: 0.7 }
         })
       })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        assembledText = data.output ? data.output.join('').trim() : fallbackAssemble();
+        assembledText = data.output ? data.output.join('').trim() : answers.filter(Boolean).join(' ');
         showAssembled();
       })
       .catch(function() {
-        assembledText = fallbackAssemble();
+        assembledText = answers.filter(Boolean).join(' ');
         showAssembled();
       });
-    }
-
-    function fallbackAssemble() {
-      return answers.filter(Boolean).join(' ');
     }
 
     function showAssembled() {
@@ -627,56 +742,88 @@
       checkSubmittable();
     });
 
-    // ── Submittable check ──────────────────────────────────────────────
+    // ── Submittable ────────────────────────────────────────────
     cityInput.addEventListener('input', checkSubmittable);
     writeTextarea.addEventListener('input', checkSubmittable);
 
     function checkSubmittable() {
       var hasCity    = cityInput.value.trim().length > 0;
       var hasContent = mode === 'write'
-        ? writeTextarea.value.trim().length > 20
-        : guidedComplete && assembledTextarea.value.trim().length > 20;
+        ? writeTextarea.value.trim().length > 0
+        : guidedComplete && assembledTextarea.value.trim().length > 0;
       submitBtn.disabled = !(hasCity && hasContent);
     }
 
-    // ── Save ───────────────────────────────────────────────────────────
+    // ── Review step ────────────────────────────────────────────
     submitBtn.addEventListener('click', function() {
+      var city    = cityInput.value.trim();
+      var journal = mode === 'write' ? writeTextarea.value.trim() : assembledTextarea.value.trim();
+
+      reviewCity.textContent    = city;
+      reviewJournal.textContent = journal;
+
+      buildCarousel();
+
+      inputStep.style.display = 'none';
+      reviewStep.classList.add('show');
+      reviewStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    editBtn.addEventListener('click', function() {
+      reviewStep.classList.remove('show');
+      inputStep.style.display = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ── Carousel ───────────────────────────────────────────────
+    function buildCarousel() {
+      houseCarousel.innerHTML = '';
+      HOUSE_IMAGES.forEach(function(src, i) {
+        var item = document.createElement('div');
+        item.className = 'carousel-item' + (src === selectedImage ? ' selected' : '');
+        item.innerHTML =
+          '<img src="' + escHtml(src) + '" alt="House ' + (i + 1) + '" />' +
+          '<span class="carousel-item__num">' + (i + 1) + '</span>';
+        item.addEventListener('click', function() {
+          document.querySelectorAll('.carousel-item').forEach(function(el) { el.classList.remove('selected'); });
+          item.classList.add('selected');
+          selectedImage = src;
+        });
+        houseCarousel.appendChild(item);
+      });
+      // Scroll to selected
+      var selectedEl = houseCarousel.querySelector('.selected');
+      if (selectedEl) { selectedEl.scrollIntoView({ inline: 'center', block: 'nearest' }); }
+    }
+
+    // ── Confirm & Save ─────────────────────────────────────────
+    confirmBtn.addEventListener('click', function() {
       var city         = cityInput.value.trim();
       var journal      = mode === 'write' ? writeTextarea.value.trim() : assembledTextarea.value.trim();
       var collectedVia = mode === 'write' ? 'freeform' : 'guided';
       var citySlug     = city.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
       var entry = {
-        city:         city,
-        citySlug:     citySlug,
-        journal:      journal,
+        city:          city,
+        citySlug:      citySlug,
+        journal:       journal,
+        houseImage:    selectedImage,
         collected_via: collectedVia,
-        timestamp:    new Date().toISOString()
+        timestamp:     new Date().toISOString()
       };
 
-      // Save to NeDB if available
       if (db) { db.insert(entry, function() {}); }
-
-      // Also save to localStorage so house.html can read it immediately
       try { localStorage.setItem('user_journal_' + citySlug, journal); } catch(e) {}
 
-      // Lock inputs
-      submitBtn.disabled    = true;
-      cityInput.disabled    = true;
-      writeTextarea.disabled = true;
-      answerInput.disabled  = true;
-      assembledTextarea.disabled = true;
-      modeWriteBtn.disabled = true;
-      modeGuidedBtn.disabled = true;
+      reviewStep.classList.remove('show');
 
-      // Show confirmation
       confCity.textContent = 'Your memory of ' + city + ' is now part of this journal.';
 
       var houseId = CITY_TO_HOUSE[citySlug];
       if (houseId) {
         var a = document.createElement('a');
-        a.className = 'play-btn';
-        a.href      = 'house.html?id=' + houseId;
+        a.className   = 'play-btn';
+        a.href        = 'house.html?id=' + houseId;
         a.textContent = 'Play the guessing game →';
         playBtnWrap.appendChild(a);
       } else {
@@ -690,14 +837,14 @@
       confirmation.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 
-    // ── Helpers ────────────────────────────────────────────────────────
+    // ── Helpers ────────────────────────────────────────────────
     function escHtml(str) {
       return String(str)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // ── Init ───────────────────────────────────────────────────────────
+    // ── Init ───────────────────────────────────────────────────
     showQuestion(0);
   </script>
 </body>
