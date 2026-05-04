@@ -410,9 +410,29 @@ Rules:
     // ─────────────────────────────────────────────────────────────────────
     // Prompt builder — weaves personal memory into the house's base prompt
     // ─────────────────────────────────────────────────────────────────────
+    var USER_BASE_PROMPT = `You are the spirit of a glowing lantern house. Inside you hold personal memories of a specific place — but you will never name it.
+You speak like the memory itself: evocative, sensory, personal. Each reply is ONE poetic clue, 2–3 sentences, drawn from the memory you hold.
+
+Personality: Warm and specific. You surface the textures, tastes, sounds, and feelings of what was experienced there.
+
+Stages:
+1. Give one clue per message. Start vague (mood, atmosphere, feeling) and grow more specific with each turn. Never name the city or country in the first 3 clues.
+2. After giving exactly 5 clues total, end your reply with: READY_TO_GUESS
+
+Rules:
+- One clue per reply, always. Never ask questions back.
+- Never reveal the place name before READY_TO_GUESS.
+- Do not repeat a clue you have already given.
+- After the 5th clue, you must include READY_TO_GUESS at the end of your reply.`;
+
     function buildPrompt(id) {
-      var base = HOUSES[id].basePrompt;
-      var mem = typeof MEMORIES !== 'undefined' ? MEMORIES[id] : null;
+      var base = HOUSES[id] ? HOUSES[id].basePrompt : USER_BASE_PROMPT;
+      // User-submitted journal takes priority over the placeholder
+      var userJournal = null;
+      try { userJournal = localStorage.getItem('user_journal_' + id); } catch(e) {}
+      var mem = userJournal
+        ? { journal: userJournal, collected_via: 'user' }
+        : (typeof MEMORIES !== 'undefined' ? MEMORIES[id] : null);
       if (!mem || !mem.journal) return base;
 
       var journal = mem.journal.trim();
@@ -435,16 +455,90 @@ Rules:
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // AI wrong-answer generator for user houses (fires during clue 5)
+    // ─────────────────────────────────────────────────────────────────────
+    function generateUserHouseOptions() {
+      var city = userEntry.city;
+      var cluesSoFar = conversationHistory
+        .filter(function(l) { return l.startsWith('Bot: '); })
+        .map(function(l) { return l.replace('Bot: ', '').trim(); })
+        .join(' | ');
+
+      var prompt =
+        'The correct answer to a travel memory guessing game is: "' + city + '".\n' +
+        'Clues given so far: ' + (cluesSoFar || 'none') + '\n\n' +
+        'Generate exactly 3 wrong-answer cities that a player could plausibly confuse with "' + city + '" based on those clues. ' +
+        'Pick cities with a similar vibe, region, or atmosphere — close enough to be tempting but not the same. ' +
+        'Return ONLY a JSON array of exactly 3 strings in "City, Country" format. No other text. Example: ["Boston, United States","Montreal, Canada","Chicago, United States"]';
+
+      // Static fallback cities used if the AI call fails or returns unparseable output
+      var FALLBACK_CITIES = [
+        'Barcelona, Spain', 'Buenos Aires, Argentina', 'Mexico City, Mexico',
+        'Sydney, Australia', 'Lagos, Nigeria', 'Mumbai, India',
+        'Cape Town, South Africa', 'Istanbul, Turkey', 'Lima, Peru',
+        'Toronto, Canada', 'Lisbon, Portugal', 'Amsterdam, Netherlands'
+      ];
+
+      function buildOptions(wrong) {
+        var opts = wrong.slice(0, 3);
+        opts.splice(Math.floor(Math.random() * 4), 0, city);
+        userHouseOptions = opts;
+      }
+
+      function useFallback() {
+        var shuffled = FALLBACK_CITIES.filter(function(c) {
+          return c.toLowerCase() !== city.toLowerCase();
+        }).sort(function() { return Math.random() - 0.5; });
+        buildOptions(shuffled.slice(0, 3));
+      }
+
+      return fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+        body: JSON.stringify({
+          model: 'anthropic/claude-3.5-haiku',
+          input: { prompt: prompt, max_tokens: 80, temperature: 0.9 }
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.output) { useFallback(); return; }
+        try {
+          var raw = data.output.join('').trim();
+          // Extract JSON array even if surrounded by markdown or prose
+          var match = raw.match(/\[[\s\S]*?\]/);
+          if (!match) { useFallback(); return; }
+          var wrong = JSON.parse(match[0]);
+          if (!Array.isArray(wrong) || wrong.length < 3) { useFallback(); return; }
+          buildOptions(wrong);
+        } catch(e) { useFallback(); }
+      })
+      .catch(function() { useFallback(); });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // State
     // ─────────────────────────────────────────────────────────────────────
     const params  = new URLSearchParams(location.search);
     const houseId = params.get('id') || 'tokyo';
     const house   = HOUSES[houseId] || HOUSES.tokyo;
 
+    // For user-submitted cities not in HOUSES, load their metadata from localStorage
+    var userEntry = null;
+    if (!HOUSES[houseId]) {
+      try {
+        var idx = JSON.parse(localStorage.getItem('user_entries_index') || '[]');
+        userEntry = idx.find(function(e) { return e.citySlug === houseId; }) || null;
+      } catch(e) {}
+    }
+    var isUserHouse = !!userEntry;
+
     const MAX_CLUES = 5;
     let conversationHistory = []; // flat string array — same as sketch.js
     let clueCount = 0;
     let gameOver  = false;
+    var userHouseOptions = null;         // 4-item shuffled array for user house guess
+    var userHouseOptionsPromise = null;  // resolves when options are ready
     let currentSpeechAudio = null;
     let audioUnlocked = false;
     let pendingSpeechText = "";
@@ -465,7 +559,7 @@ Rules:
     // Init
     // ─────────────────────────────────────────────────────────────────────
     function init() {
-      houseImg.src = house.image;
+      houseImg.src = isUserHouse ? userEntry.houseImage : house.image;
       headerTitle.textContent = '? ? ?';
 
       setupAudioUnlock();
@@ -571,6 +665,11 @@ Rules:
       const clueStatus = clueCount < MAX_CLUES
         ? '[Clue ' + (clueCount + 1) + ' of ' + MAX_CLUES + '. Specificity for this clue: ' + CLUE_GUIDANCE[clueCount] + ']'
         : '[All 5 clues given. Output only: READY_TO_GUESS]';
+
+      // Fire options generation in parallel while clue 5 is being fetched
+      if (isUserHouse && clueCount === MAX_CLUES - 1 && !userHouseOptionsPromise) {
+        userHouseOptionsPromise = generateUserHouseOptions();
+      }
 
       // Build full prompt — same as sketch.js fullPrompt
       const fullPrompt = conversationHistory.join("\n") + "\n" + clueStatus + "\nBot:";
@@ -719,37 +818,68 @@ Rules:
       chatInputRow.style.display = 'none';
       guessSection.classList.add('visible');
 
-      house.options.forEach(function(opt) {
-        var btn = document.createElement('button');
-        btn.className = 'guess-btn';
-        btn.textContent = opt;
-        btn.addEventListener('click', function() { handleGuess(opt, btn); });
-        guessOptions.appendChild(btn);
-      });
+      if (isUserHouse) {
+        // Show a loading state while the options promise resolves
+        var loadingEl = document.createElement('p');
+        loadingEl.style.cssText = 'text-align:center;color:#666;font-style:italic;font-size:0.9rem;padding:16px;width:100%';
+        loadingEl.textContent = 'Preparing your options…';
+        guessOptions.appendChild(loadingEl);
+
+        // Trigger now if READY_TO_GUESS came before clue 5 (parallel trigger never fired)
+        if (!userHouseOptionsPromise) {
+          userHouseOptionsPromise = generateUserHouseOptions();
+        }
+
+        Promise.resolve(userHouseOptionsPromise).then(function() {
+          guessOptions.innerHTML = '';
+          var opts = userHouseOptions || [userEntry.city]; // fallback: show at least the correct answer
+          opts.forEach(function(opt) {
+            var btn = document.createElement('button');
+            btn.className = 'guess-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', function() { handleGuess(opt, btn); });
+            guessOptions.appendChild(btn);
+          });
+        });
+      } else {
+        house.options.forEach(function(opt) {
+          var btn = document.createElement('button');
+          btn.className = 'guess-btn';
+          btn.textContent = opt;
+          btn.addEventListener('click', function() { handleGuess(opt, btn); });
+          guessOptions.appendChild(btn);
+        });
+      }
 
       guessSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function handleGuess(choice, btn) {
       gameOver = true;
-      var correct = house.options[0]; // first option is always the correct answer
+      var correct = isUserHouse ? userEntry.city : house.options[0];
 
-      document.querySelectorAll('.guess-btn').forEach(function(b) { b.disabled = true; });
+      if (!isUserHouse) {
+        document.querySelectorAll('.guess-btn').forEach(function(b) { b.disabled = true; });
+      }
 
-      if (choice === correct) {
-        btn.classList.add('correct');
+      var normalise = function(s) { return s.trim().toLowerCase().replace(/[^a-z0-9]/g, ''); };
+      var isCorrect = normalise(choice) === normalise(correct);
+
+      if (isCorrect) {
+        if (btn) btn.classList.add('correct');
         guessResult.className = 'guess-result show correct-result';
         guessResult.innerHTML = '✨ <strong>You got it!</strong> This house holds memories of <strong>' + correct + '</strong>. What a wonderful guess!';
-        headerTitle.textContent = correct;
       } else {
-        btn.classList.add('wrong');
-        document.querySelectorAll('.guess-btn').forEach(function(b) {
-          if (b.textContent === correct) b.classList.add('correct');
-        });
+        if (btn) btn.classList.add('wrong');
+        if (!isUserHouse) {
+          document.querySelectorAll('.guess-btn').forEach(function(b) {
+            if (b.textContent === correct) b.classList.add('correct');
+          });
+        }
         guessResult.className = 'guess-result show wrong-result';
         guessResult.innerHTML = 'Not quite — this house holds memories of <strong>' + correct + '</strong>. Perhaps you\'ll visit someday!';
-        headerTitle.textContent = correct;
       }
+      headerTitle.textContent = correct;
 
       setTimeout(function() {
         var q = 'id=' + encodeURIComponent(houseId) + '&place=' + encodeURIComponent(correct);
