@@ -229,13 +229,9 @@
   <div class="section-divider">Helen's memories</div>
   <div class="houses-grid" id="helenGrid"></div>
 
-  <!-- Friends' hardcoded houses -->
+  <!-- Friends' + visitor houses -->
   <div class="section-divider">Friends' memories</div>
   <div class="houses-grid" id="friendsGrid"></div>
-
-  <!-- User-submitted houses -->
-  <div class="section-divider" id="userDivider" style="display:none">Visitor memories</div>
-  <div class="houses-grid" id="userGrid"></div>
 
   <script>
     var HELEN_HOUSES = [
@@ -265,23 +261,16 @@
       friendsGrid.appendChild(makeCard('house.html?id=' + h.id, h.image, h.name));
     });
 
-    // ── Load user-submitted houses from localStorage index ───
-    var userGrid    = document.getElementById('userGrid');
-    var userDivider = document.getElementById('userDivider');
-
+    // ── Load user-submitted houses into the friends grid ────
     try {
       var entries = JSON.parse(localStorage.getItem('user_entries_index') || '[]');
-      if (entries.length > 0) {
-        // Newest first
-        entries.sort(function(a, b) { return (b.timestamp || '').localeCompare(a.timestamp || ''); });
-        userDivider.style.display = '';
-        entries.forEach(function(doc) {
-          var img  = doc.houseImage || 'images/house1.png';
-          var name = doc.name || 'Anonymous';
-          var href = doc.citySlug ? 'house.html?id=' + doc.citySlug : '#';
-          userGrid.appendChild(makeCard(href, img, name));
-        });
-      }
+      entries.sort(function(a, b) { return (b.timestamp || '').localeCompare(a.timestamp || ''); });
+      entries.forEach(function(doc) {
+        var img  = doc.houseImage || 'images/house1.png';
+        var name = doc.name || 'Anonymous';
+        var href = doc.citySlug ? 'house.html?id=' + doc.citySlug : '#';
+        friendsGrid.appendChild(makeCard(href, img, name));
+      });
     } catch(e) {}
 
     // ── Card builder ─────────────────────────────────────────
