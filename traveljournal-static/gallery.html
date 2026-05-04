@@ -229,6 +229,10 @@
   <div class="section-divider">Helen's memories</div>
   <div class="houses-grid" id="helenGrid"></div>
 
+  <!-- Friends' hardcoded houses -->
+  <div class="section-divider">Friends' memories</div>
+  <div class="houses-grid" id="friendsGrid"></div>
+
   <!-- User-submitted houses -->
   <div class="section-divider" id="userDivider" style="display:none">Visitor memories</div>
   <div class="houses-grid" id="userGrid"></div>
@@ -243,10 +247,22 @@
       { id: 'bangkok', image: 'images/house13.png' }
     ];
 
+    var FRIEND_HOUSES = [
+      { id: 'paris',   image: 'images/house5.png',  name: 'Joanna' },
+      { id: 'bali',    image: 'images/house8.png',  name: 'Haley'  },
+      { id: 'newyork', image: 'images/house14.png', name: 'Selina' }
+    ];
+
     // ── Render Helen's houses ────────────────────────────────
     var helenGrid = document.getElementById('helenGrid');
     HELEN_HOUSES.forEach(function(h) {
       helenGrid.appendChild(makeCard('house.html?id=' + h.id, h.image, 'Helen'));
+    });
+
+    // ── Render friends' houses ───────────────────────────────
+    var friendsGrid = document.getElementById('friendsGrid');
+    FRIEND_HOUSES.forEach(function(h) {
+      friendsGrid.appendChild(makeCard('house.html?id=' + h.id, h.image, h.name));
     });
 
     // ── Load user-submitted houses from localStorage index ───
