@@ -29,7 +29,8 @@ const MEMORIES = {
   bangkok: {
     journal: `The heat hit me like a wall the moment I stepped outside the airport — warm, wet, immediate. I ate my way through the streets: noodles from a cart at 7am, mango sticky rice on a plastic stool at midnight. The temples were enormous and gold and alive with pigeons and monks in saffron robes. One evening I took a long-tail boat down the river and the city looked completely different from the water — quieter, older, like it was keeping a secret. I burned incense at a small street shrine and made a wish I've never told anyone.`,
     collected_via: 'placeholder'
-  }
+  },
+
   paris: {
     journal: `The light in Paris has a particular softness in early autumn — gold and diffuse, the way old photographs look when memory has had time to work on them. I sat at a corner café for two hours with nothing but coffee and a notebook, watching people pass, feeling entirely invisible and entirely at home. The language moved around me like music I almost understood. One morning I crossed the river very early and the city was grey and quiet and the bridges were empty, and I stood in the middle of one for a long time looking at the water, feeling something I still can't quite name.`,
     collected_via: 'freeform'
