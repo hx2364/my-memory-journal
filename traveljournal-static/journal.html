@@ -127,11 +127,12 @@
 
       labelEl.textContent = place || 'A place you imagined';
 
-      if (mem && mem.journal) {
-        textEl.textContent = mem.journal;
-      } else {
-        textEl.textContent = 'There is no letter saved for this house yet.';
+      var journal = (mem && mem.journal) ? mem.journal : null;
+      if (!journal) {
+        try { journal = localStorage.getItem('user_journal_' + id); } catch(e) {}
       }
+
+      textEl.textContent = journal || 'There is no letter saved for this house yet.';
     })();
   </script>
 </body>

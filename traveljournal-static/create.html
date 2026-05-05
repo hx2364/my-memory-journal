@@ -448,7 +448,7 @@
 <body>
 
   <header class="header">
-    <a class="header__back" href="journey.html">← Village</a>
+    <a class="header__back" id="headerBack" href="journey.html">← Village</a>
     <span class="header__title">Add Your Memory</span>
     <span style="width: 80px"></span>
   </header>
@@ -594,13 +594,26 @@
     var PROXY_URL = "https://itp-ima-replicate-proxy.web.app/api/create_n_get";
     var authToken = "";
 
+    // Back link: gallery if they came from the game, village otherwise
+    (function() {
+      var ref = document.referrer || '';
+      var backEl = document.getElementById('headerBack');
+      if (/house\.html|journal\.html|gallery\.html/.test(ref)) {
+        backEl.href = 'gallery.html';
+        backEl.textContent = '← Gallery';
+      }
+    })();
+
     var CITY_TO_HOUSE = {
-      tokyo: 'tokyo',     japan: 'tokyo',
+      tokyo: 'tokyo',      japan: 'tokyo',
       jerusalem: 'israel', israel: 'israel',
       santorini: 'greece', mykonos: 'greece', greece: 'greece',
       london: 'london',    england: 'london',  uk: 'london',
       moscow: 'russia',    russia: 'russia',
-      bangkok: 'bangkok',  thailand: 'bangkok'
+      bangkok: 'bangkok',  thailand: 'bangkok',
+      paris: 'paris',      france: 'paris',
+      bali: 'bali',        indonesia: 'bali',
+      new_york_city: 'newyork', new_york: 'newyork', newyork: 'newyork'
     };
 
     var QUESTIONS = [
@@ -898,19 +911,14 @@
 
       confCity.textContent = 'Your memory of ' + cityDisplay + ' is now part of this journal.';
 
-      var houseId = CITY_TO_HOUSE[citySlug] || CITY_TO_HOUSE[country.toLowerCase().replace(/[^a-z0-9]+/g,'_')];
-      if (houseId) {
-        var a = document.createElement('a');
-        a.className   = 'play-btn';
-        a.href        = 'house.html?id=' + houseId;
-        a.textContent = 'Play the guessing game →';
-        playBtnWrap.appendChild(a);
-      } else {
-        var note = document.createElement('p');
-        note.className   = 'play-btn-soon';
-        note.textContent = 'Custom houses for new cities coming soon.';
-        playBtnWrap.appendChild(note);
-      }
+      var houseId = CITY_TO_HOUSE[citySlug]
+        || CITY_TO_HOUSE[country.toLowerCase().replace(/[^a-z0-9]+/g,'_')]
+        || citySlug;
+      var playLink = document.createElement('a');
+      playLink.className   = 'play-btn';
+      playLink.href        = 'house.html?id=' + houseId;
+      playLink.textContent = 'Play the guessing game →';
+      playBtnWrap.appendChild(playLink);
 
       confirmation.classList.add('show');
       confirmation.scrollIntoView({ behavior: 'smooth', block: 'center' });
